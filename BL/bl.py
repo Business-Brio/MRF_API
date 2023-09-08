@@ -369,7 +369,7 @@ def active_customer_data(df_original):
     return df_daily_active,df_daily_inactive,df_daily_active_fn,df_weekly_active,df_weekly_inactive,df_weekly_active_fn,df_monthly_active,df_monthly_inactive,df_monthly_active_fn,df_quarterly_active,df_quarterly_inactive,df_quarterly_active_fn
 
 
-def elasticity(df_original):
+def price_elasticity(df_original):
     df_original = df_original[df_original["VOLUME"] > 0]
     df_original["Unit_price"] = df_original["SALES"]/df_original["VOLUME"]
     df_Stock = df_original.groupby(['VISIT_DT','SKU_ID']).agg({'Unit_price':'mean','VOLUME': 'mean' }).reset_index()
@@ -430,48 +430,30 @@ def elasticity(df_original):
 
     final_df = pd.DataFrame.from_dict(results_values)
     df_elasticity = final_df[['name','price_elasticity','t_score','coefficient_pvalue','slope','price_mean','quantity_mean','intercept']]
-    return df_elasticity
+    product_rank =  df_elasticity[['name', 'price_elasticity']]
+    product_rank = product_rank.sort_values(by='price_elasticity')
+    product_rank['ranking'] = product_rank['price_elasticity'].rank()
+    product_rank.reset_index(drop=True, inplace=True)
+    return product_rank
 
-def product_rank(df_elasticity, values_column):
-
-    #Divergent plot
-    df=df_elasticity.copy()
-    df['ranking'] = df[values_column].rank( ascending = True).astype(int)
-    df.sort_values(values_column, ascending =False, inplace = True)
-
-    #Adjust Ranking column and print dataframe
-    pd.set_option('display.width', 4000)
-    cols = list(df.columns)
-    cols = [cols[-1]] + cols[:-1]
-    df = df[cols]
-
-    df = df.iloc[:,:3]
-    df.set_index('ranking', inplace=True)
-    print(df)
-
-def price_elasticity(df_original):
-   
-   df_elasticity=elasticity(df_original)
-   pe_rank = product_rank(df_elasticity, 'price_elasticity')
-   return pe_rank
 
 def table_creat (df_original):
    
-#    df_daily_active,df_daily_inactive,df_daily_active_fn,df_weekly_active,df_weekly_inactive,df_weekly_active_fn,df_monthly_active,df_monthly_inactive,df_monthly_active_fn,df_quarterly_active,df_quarterly_inactive,df_quarterly_active_fn =active_customer_data(df_original)
-#    dl.insert_data_into_mysql('daily_active_cust', df_daily_active, if_exists='replace', chunk_size=3000)
-#    dl.insert_data_into_mysql('daily_inactive_cust', df_daily_inactive, if_exists='replace', chunk_size=3000)
-#    dl.insert_data_into_mysql('daily_active_group', df_daily_active_fn, if_exists='replace', chunk_size=3000)
-#    dl.insert_data_into_mysql('weekly_active_cust', df_weekly_active, if_exists='replace', chunk_size=3000)
-#    dl.insert_data_into_mysql('weekly_inactive_cust', df_weekly_inactive, if_exists='replace', chunk_size=3000)
-#    dl.insert_data_into_mysql('weekly_active_group', df_weekly_active_fn, if_exists='replace', chunk_size=3000)
-#    dl.insert_data_into_mysql('monthly_active_cust', df_monthly_active, if_exists='replace', chunk_size=3000)
-#    dl.insert_data_into_mysql('monthly_inactive_cust', df_monthly_inactive, if_exists='replace', chunk_size=3000)
-#    dl.insert_data_into_mysql('monthly_active_group', df_monthly_active_fn, if_exists='replace', chunk_size=3000)
-#    dl.insert_data_into_mysql('quarterly_active_cust', df_quarterly_active, if_exists='replace', chunk_size=3000)
-#    dl.insert_data_into_mysql('quarterly_inactive_cust', df_quarterly_inactive, if_exists='replace', chunk_size=3000)
-#    dl.insert_data_into_mysql('quarterly_active_group', df_quarterly_active_fn, if_exists='replace', chunk_size=3000)
+   df_daily_active,df_daily_inactive,df_daily_active_fn,df_weekly_active,df_weekly_inactive,df_weekly_active_fn,df_monthly_active,df_monthly_inactive,df_monthly_active_fn,df_quarterly_active,df_quarterly_inactive,df_quarterly_active_fn =active_customer_data(df_original)
+   dl.insert_data_into_mysql('daily_active_cust', df_daily_active, if_exists='replace', chunk_size=3000)
+   dl.insert_data_into_mysql('daily_inactive_cust', df_daily_inactive, if_exists='replace', chunk_size=3000)
+   dl.insert_data_into_mysql('daily_active_group', df_daily_active_fn, if_exists='replace', chunk_size=3000)
+   dl.insert_data_into_mysql('weekly_active_cust', df_weekly_active, if_exists='replace', chunk_size=3000)
+   dl.insert_data_into_mysql('weekly_inactive_cust', df_weekly_inactive, if_exists='replace', chunk_size=3000)
+   dl.insert_data_into_mysql('weekly_active_group', df_weekly_active_fn, if_exists='replace', chunk_size=3000)
+   dl.insert_data_into_mysql('monthly_active_cust', df_monthly_active, if_exists='replace', chunk_size=3000)
+   dl.insert_data_into_mysql('monthly_inactive_cust', df_monthly_inactive, if_exists='replace', chunk_size=3000)
+   dl.insert_data_into_mysql('monthly_active_group', df_monthly_active_fn, if_exists='replace', chunk_size=3000)
+   dl.insert_data_into_mysql('quarterly_active_cust', df_quarterly_active, if_exists='replace', chunk_size=3000)
+   dl.insert_data_into_mysql('quarterly_inactive_cust', df_quarterly_inactive, if_exists='replace', chunk_size=3000)
+   dl.insert_data_into_mysql('quarterly_active_group', df_quarterly_active_fn, if_exists='replace', chunk_size=3000)
 
-   pe_rank = product_rank(df_original)
-   dl.insert_data_into_mysql('price_elasticity_list', pe_rank, if_exists='replace', chunk_size=3000)
+   product_rank=price_elasticity(df_original)
+   dl.insert_data_into_mysql('price_elasticity_list', product_rank, if_exists='replace', chunk_size=3000)
 
    
